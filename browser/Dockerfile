@@ -13,7 +13,7 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-# ── System packages ─────────────────────────────────────────────────────────
+# ── System packages & Browser Dependencies ──────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Core utilities
     sudo \
@@ -23,19 +23,37 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg \
     lsb-release \
-    software-properties-common \
-    apt-transport-https \
     locales \
     dbus \
     dbus-x11 \
+    unzip \
     # Lightweight Window Manager & Taskbar
     openbox \
     tint2 \
-    # X11
+    # X11 & Graphics Libraries
     xvfb \
     x11-utils \
     x11-xserver-utils \
     xdg-utils \
+    libnss3 \
+    libnspr4 \
+    libasound2t64 \
+    libgbm1 \
+    libxss1 \
+    libatk1.0-0t64 \
+    libatk-bridge2.0-0t64 \
+    libatspi2.0-0t64 \
+    libgtk-3-0t64 \
+    libcups2t64 \
+    libdrm2 \
+    libx11-xcb1 \
+    libxcb-dri3-0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libpango-1.0-0 \
+    libcairo2 \
     # VNC & HTML5 noVNC (Zero-password web desktop)
     tigervnc-common \
     tigervnc-tools \
@@ -54,47 +72,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Process management
     supervisor \
     procps \
-    # Build essentials for Python
+    # Python runtime
     python3 \
-    python3-pip \
     python3-venv \
     git \
-    # Misc
+    # Misc X11 utilities
     xdotool \
     xclip \
     && locale-gen en_US.UTF-8 \
     && echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=vnc.html?autoconnect=true&resize=scale&quality=6&compression=6"></head><body></body></html>' > /usr/share/novnc/index.html \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/*
 
 # Verify VNC tools exist
 RUN command -v vncpasswd && \
     command -v x0tigervncserver
-    
+
 # ── Install Chrome for Testing (Multi-Arch: amd64 and arm64 with --load-extension support) ──
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        unzip \
-        libnss3 \
-        libnspr4 \
-        libasound2t64 \
-        libgbm1 \
-        libxss1 \
-        libatk1.0-0t64 \
-        libatk-bridge2.0-0t64 \
-        libatspi2.0-0t64 \
-        libgtk-3-0t64 \
-        libcups2t64 \
-        libdrm2 \
-        libx11-xcb1 \
-        libxcb-dri3-0 \
-        libxcomposite1 \
-        libxdamage1 \
-        libxfixes3 \
-        libxrandr2 \
-        libpango-1.0-0 \
-        libcairo2 \
-    && rm -rf /var/lib/apt/lists/* \
-    && ARCH=$(dpkg --print-architecture) \
+RUN ARCH=$(dpkg --print-architecture) \
     && if [ "$ARCH" = "arm64" ]; then CFT_ARCH="linux-arm64"; else CFT_ARCH="linux64"; fi \
     && wget -q -O /tmp/chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.5/${CFT_ARCH}/chrome-${CFT_ARCH}.zip" \
     && unzip -q /tmp/chrome.zip -d /opt/ \
@@ -123,18 +118,18 @@ RUN useradd -m -s /bin/bash -G sudo gloria \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && cp /root/.local/bin/uv /usr/local/bin/uv \
     && cp /root/.local/bin/uvx /usr/local/bin/uvx \
-    && chmod +x /usr/local/bin/uv /usr/local/bin/uvx
+    && chmod +x /usr/local/bin/uv /usr/local/bin/uvx \
+    && rm -rf /root/.local /root/.cache
 
-# ── Install Chrome Bridge ──────────────────────────────────────────────────
+# ── Install Chrome Bridge & MCP Proxy ──────────────────────────────────────
 USER gloria
 ENV HOME=/home/gloria
 ENV PATH="/home/gloria/.local/bin:${PATH}"
 
-# Install chrome-bridge as a uv tool
-RUN uv tool install antigravity-chrome-bridge
-
-# Install mcp-proxy for remote MCP access
-RUN uv tool install "mcp-proxy" --with "mcp<2.0.0"
+RUN uv tool install antigravity-chrome-bridge \
+    && uv tool install "mcp-proxy" --with "mcp<2.0.0" \
+    && uv cache clean \
+    && rm -rf /home/gloria/.cache
 
 USER root
 
