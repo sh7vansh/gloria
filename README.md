@@ -36,8 +36,6 @@ docker compose up -d
 | **MCP Endpoint** | `http://localhost:8787/mcp` | None | AI agent interface (HTTP/SSE) |
 | **Direct VNC** | `localhost:5901` | `gloria` | Native VNC viewer access |
 
----
-
 ## Remote AI Automation (MCP)
 
 Gloria decouples the AI agent from the browser environment. By hosting Gloria on a remote server, VPS, or homelab, agents gain persistent, 24/7 browser control without consuming local system resources.
@@ -57,12 +55,12 @@ Add Gloria's endpoint to your MCP client configuration (Claude Desktop, Cursor, 
 ```
 *Use `localhost:8787/mcp` for local development, or your remote server/VPN IP for remote agents.*
 
-### How It Works
+### Minimal MCP Proxy
 
-- **Full DOM Control**: Agents read semantic page outlines (`chrome.snapshot`), click, type, navigate, and execute Python scripts via [Chrome Bridge](https://github.com/sh7vansh/chrome-bridge).
-- **Persistent Sessions**: Authentication, cookies, and storage stay preserved on the `/data` volume across agent runs and container restarts.
-- **Remote Human-in-the-Loop**: When an agent hits a CAPTCHA, 2FA prompt, or complex login on a remote instance, open `http://<host>:8080` in your local browser to assist. The agent immediately resumes in the same session.
+Gloria uses [`mcp-proxy`](https://pypi.org/project/mcp-proxy/) to bridge [Chrome Bridge](https://github.com/sh7vansh/chrome-bridge)'s stdio MCP server over streamable HTTP/SSE on port `8787`. This lightweight proxy forwards tool calls directly to the container's Native Messaging host with zero middleware bloat.
 
+> [!WARNING]
+> The MCP endpoint is unauthenticated by default and grants direct control over the live Chromium session and its authenticated state. Run Gloria on a private network, behind a VPN (e.g. Tailscale), or behind an authenticated reverse proxy.
 
 ---
 
@@ -96,15 +94,9 @@ All persistent data is stored in the `gloria-data` Docker volume under `/data`:
 
 ---
 
-## Security
-
-> [!WARNING]
-> The MCP endpoint is unauthenticated by default and grants direct control over the live browser session. Run Gloria on a private network, behind a VPN (e.g. Tailscale), or behind an authenticated reverse proxy.
-
----
-
 ## License
 
 [MIT](LICENSE)
+
 
 
