@@ -126,7 +126,7 @@ USER gloria
 ENV HOME=/home/gloria
 ENV PATH="/home/gloria/.local/bin:${PATH}"
 
-RUN uv tool install antigravity-chrome-bridge \
+RUN uv tool install "antigravity-chrome-bridge>=2.1.0" \
     && uv tool install "mcp-proxy" --with "mcp<2.0.0" \
     && uv cache clean \
     && rm -rf /home/gloria/.cache
