@@ -53,11 +53,7 @@ Add Gloria's endpoint to your MCP client configuration (Claude Desktop, Cursor, 
   }
 }
 ```
-*Use `localhost:8787/mcp` for local development, or your remote server/VPN IP for remote agents.*
-
-### Minimal MCP Proxy
-
-Gloria uses [`mcp-proxy`](https://pypi.org/project/mcp-proxy/) to bridge [Chrome Bridge](https://github.com/sh7vansh/chrome-bridge)'s stdio MCP server over streamable HTTP/SSE on port `8787`. This lightweight proxy forwards tool calls directly to the container's Native Messaging host with zero middleware bloat.
+**Use `localhost:8787/mcp` for local development, or your remote server/VPN IP for remote agents.**
 
 > [!WARNING]
 > The MCP endpoint is unauthenticated by default and grants direct control over the live Chromium session and its authenticated state. Run Gloria on a private network, behind a VPN (e.g. Tailscale), or behind an authenticated reverse proxy.
