@@ -38,13 +38,13 @@ docker compose up -d
 
 ---
 
-## AI Agent Integration
+## Remote AI Automation (MCP)
 
-Gloria decouples the AI agent from the browser host. Deploy Gloria on a remote server, VPS, or homelab to give your agents dedicated, 24/7 browser automation without running Chromium on your local machine.
+Gloria decouples the AI agent from the browser environment. By hosting Gloria on a remote server, VPS, or homelab, agents gain persistent, 24/7 browser control without consuming local system resources.
 
-### Connect Your MCP Client
+### MCP Client Setup
 
-Add Gloria to your client's MCP configuration (Claude Desktop, Cursor, Antigravity, custom agents):
+Add Gloria's endpoint to your MCP client configuration (Claude Desktop, Cursor, Antigravity, or custom agents):
 
 ```json
 {
@@ -55,23 +55,13 @@ Add Gloria to your client's MCP configuration (Claude Desktop, Cursor, Antigravi
   }
 }
 ```
+*Use `localhost:8787/mcp` for local development, or your remote server/VPN IP for remote agents.*
 
-* For local development, use `http://localhost:8787/mcp`.
-* For remote setups, point to `http://<server-ip>:8787/mcp` or your Tailscale / VPN IP.
+### How It Works
 
-### Remote Agent Capabilities & Workflows
-
-- **Dedicated Remote Browser**: Offload heavy browsing, scraping, and testing workloads to a persistent remote host.
-- **24/7 Agent Operation**: Agents can execute long-running workflows without tying up local system resources.
-- **Remote Human-in-the-Loop**: If an agent hits a CAPTCHA, 2FA challenge, or login prompt on a remote instance, open `http://<server-ip>:8080` in any browser, resolve it manually, and the agent continues immediately in the same session.
-
-### Key Tools Provided
-- `chrome.snapshot()` — Extract a semantic outline and element map of the active tab.
-- `chrome.click(id)` — Click targeted elements.
-- `chrome.type(id, text)` — Input text into form fields.
-- `chrome.navigate(url)` — Navigate to URLs.
-- `chrome.screenshot()` — Capture viewport images.
-- `execute_python` — Run custom Python scripts using the `chrome` SDK.
+- **Full DOM Control**: Agents read semantic page outlines (`chrome.snapshot`), click, type, navigate, and execute Python scripts via [Chrome Bridge](https://github.com/sh7vansh/chrome-bridge).
+- **Persistent Sessions**: Authentication, cookies, and storage stay preserved on the `/data` volume across agent runs and container restarts.
+- **Remote Human-in-the-Loop**: When an agent hits a CAPTCHA, 2FA prompt, or complex login on a remote instance, open `http://<host>:8080` in your local browser to assist. The agent immediately resumes in the same session.
 
 
 ---
