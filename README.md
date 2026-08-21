@@ -7,7 +7,7 @@ A containerized, persistent Chromium workstation for concurrent human and AI age
 
 ```
 Human  ───▶  noVNC (Port 8080)  ───┐
-                                   ├──▶  Shared Chromium  ──▶  Persistent Profile (/data)
+                                    ├──▶  Shared Chromium  ──▶  Persistent Profile (/data)
 AI     ───▶  MCP   (Port 8787)  ───┘
 ```
 
