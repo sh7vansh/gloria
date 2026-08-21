@@ -112,7 +112,7 @@ if [ -d /opt/extensions ]; then
     chown -R gloria:gloria /opt/extensions
 fi
 
-# Approach 1: Chromium policies (for managed installs)
+# Approach 1: Chromium / Chrome policies (for managed installs)
 cat > /etc/chromium-browser/policies/managed/gloria-extensions.json << POLICY
 {
     "ExtensionInstallAllowlist": ["${EXT_ID}", "${UBLOCK_EXT_ID}"],
@@ -129,6 +129,12 @@ cat > /etc/chromium-browser/policies/managed/gloria-extensions.json << POLICY
 }
 POLICY
 
+mkdir -p /etc/chromium/policies/managed /etc/opt/chrome/policies/managed /etc/google-chrome/policies/managed /etc/google-chrome-for-testing/policies/managed
+cp /etc/chromium-browser/policies/managed/gloria-extensions.json /etc/chromium/policies/managed/ 2>/dev/null || true
+cp /etc/chromium-browser/policies/managed/gloria-extensions.json /etc/opt/chrome/policies/managed/ 2>/dev/null || true
+cp /etc/chromium-browser/policies/managed/gloria-extensions.json /etc/google-chrome/policies/managed/ 2>/dev/null || true
+cp /etc/chromium-browser/policies/managed/gloria-extensions.json /etc/google-chrome-for-testing/policies/managed/ 2>/dev/null || true
+
 # uBlock Origin Lite Managed Storage Policy (enforce Basic mode)
 cat > /etc/chromium-browser/policies/managed/${UBLOCK_EXT_ID}.json << POLICY
 {
@@ -138,8 +144,10 @@ cat > /etc/chromium-browser/policies/managed/${UBLOCK_EXT_ID}.json << POLICY
 POLICY
 cp /etc/chromium-browser/policies/managed/${UBLOCK_EXT_ID}.json /etc/chromium/policies/managed/ 2>/dev/null || true
 cp /etc/chromium-browser/policies/managed/${UBLOCK_EXT_ID}.json /etc/opt/chrome/policies/managed/ 2>/dev/null || true
+cp /etc/chromium-browser/policies/managed/${UBLOCK_EXT_ID}.json /etc/google-chrome/policies/managed/ 2>/dev/null || true
+cp /etc/chromium-browser/policies/managed/${UBLOCK_EXT_ID}.json /etc/google-chrome-for-testing/policies/managed/ 2>/dev/null || true
 
-echo "  ✓ Chromium extension policy configured (Chrome Bridge + uBlock Origin Lite [Basic Mode])"
+echo "  ✓ Chromium/Chrome extension policy configured (Chrome Bridge + uBlock Origin Lite [Basic Mode])"
 
 # ── Phase 7: Configure Native Messaging for Chromium ───────────────────────
 echo "[7/8] Verifying Native Messaging configuration..."

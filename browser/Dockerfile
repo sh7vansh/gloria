@@ -71,10 +71,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN command -v vncpasswd && \
     command -v x0tigervncserver
     
-# ── Install Google Chrome / Chromium (Multi-Arch: amd64 and arm64) ───────────
+# ── Install Chrome for Testing (Multi-Arch: amd64 and arm64 with --load-extension support) ──
 RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
         libnss3 \
+        libnspr4 \
         libasound2t64 \
         libgbm1 \
         libxss1 \
@@ -84,13 +85,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libgtk-3-0t64 \
         libcups2t64 \
         libdrm2 \
+        libx11-xcb1 \
+        libxcb-dri3-0 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxfixes3 \
+        libxrandr2 \
+        libpango-1.0-0 \
+        libcairo2 \
+    && rm -rf /var/lib/apt/lists/* \
     && ARCH=$(dpkg --print-architecture) \
-    && wget -q -O /tmp/google-chrome.deb "https://dl.google.com/linux/direct/google-chrome-stable_current_${ARCH}.deb" \
-    && apt-get install -y /tmp/google-chrome.deb \
-    && rm -f /tmp/google-chrome.deb \
-    && ln -sfn /usr/bin/google-chrome-stable /usr/bin/chromium \
-    && ln -sfn /usr/bin/google-chrome-stable /usr/bin/chromium-browser \
-    && rm -rf /var/lib/apt/lists/*
+    && if [ "$ARCH" = "arm64" ]; then CFT_ARCH="linux-arm64"; else CFT_ARCH="linux64"; fi \
+    && wget -q -O /tmp/chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.5/${CFT_ARCH}/chrome-${CFT_ARCH}.zip" \
+    && unzip -q /tmp/chrome.zip -d /opt/ \
+    && rm -f /tmp/chrome.zip \
+    && ln -sfn /opt/chrome-${CFT_ARCH}/chrome /usr/bin/chromium \
+    && ln -sfn /opt/chrome-${CFT_ARCH}/chrome /usr/bin/chromium-browser \
+    && ln -sfn /opt/chrome-${CFT_ARCH}/chrome /usr/bin/google-chrome \
+    && ln -sfn /opt/chrome-${CFT_ARCH}/chrome /usr/bin/google-chrome-stable \
+    && chmod +x /opt/chrome-${CFT_ARCH}/chrome
 
 # ── Install uBlock Origin Lite (Preinstalled MV3 Ad-Blocker) ────────────────
 RUN mkdir -p /opt/extensions/ublock-origin-lite \
