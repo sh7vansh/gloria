@@ -1,6 +1,5 @@
 # Gloria
 
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](compose.yaml)
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-sh7vansh%2Fgloria-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/sh7vansh/gloria)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
