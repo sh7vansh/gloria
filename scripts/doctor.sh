@@ -143,28 +143,16 @@ else
         failed=1
     fi
 
-    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q gloria-guacd; then
-        status_ok "guacd" "container running"
-    else
-        status_fail "guacd" "container not running"
-        failed=1
-    fi
-
-    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q gloria-guacamole; then
-        status_ok "Guacamole" "container running"
-    else
-        status_fail "Guacamole" "container not running"
-        failed=1
-    fi
-
     # Port checks
-    GUAC_PORT="${GLORIA_GUAC_PORT:-8080}"
+    WEB_PORT="${GLORIA_WEB_PORT:-8080}"
     MCP_PORT="${GLORIA_MCP_PORT:-8787}"
 
-    if curl -sf "http://localhost:${GUAC_PORT}/guacamole/" >/dev/null 2>&1; then
-        status_ok "Guacamole UI" "http://localhost:${GUAC_PORT}/guacamole/"
+    if curl -sf "http://localhost:${WEB_PORT}/" >/dev/null 2>&1 || \
+       ss -tlnp 2>/dev/null | grep -q ":${WEB_PORT}" || \
+       netstat -tlnp 2>/dev/null | grep -q ":${WEB_PORT}"; then
+        status_ok "Web Desktop" "http://localhost:${WEB_PORT}/"
     else
-        status_warn "Guacamole UI" "not responding on port ${GUAC_PORT} (may still be starting)"
+        status_warn "Web Desktop" "not responding on port ${WEB_PORT} (may still be starting)"
     fi
 
     if curl -sf "http://localhost:${MCP_PORT}/" >/dev/null 2>&1 || \

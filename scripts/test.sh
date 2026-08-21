@@ -18,17 +18,17 @@ skipped=0
 
 test_pass() {
     echo -e "  ${GREEN}PASS${NC} $1"
-    ((passed++))
+    passed=$((passed + 1))
 }
 
 test_fail() {
     echo -e "  ${RED}FAIL${NC} $1 ${YELLOW}$2${NC}"
-    ((failed++))
+    failed=$((failed + 1))
 }
 
 test_skip() {
     echo -e "  ${YELLOW}SKIP${NC} $1 ${YELLOW}$2${NC}"
-    ((skipped++))
+    skipped=$((skipped + 1))
 }
 
 echo ""
@@ -39,26 +39,35 @@ echo ""
 # ── Compose Configuration ───────────────────────────────────────
 echo -e "${BOLD}Compose Configuration${NC}"
 
-if docker compose config >/dev/null 2>&1; then
-    test_pass "compose.yaml is valid"
-else
-    test_fail "compose.yaml is invalid"
-fi
-
-# Check required services
-for svc in gloria-browser gloria-guacd gloria-guacamole; do
-    if docker compose config --services 2>/dev/null | grep -q "$svc"; then
-        test_pass "Service '$svc' defined"
+if command -v docker >/dev/null 2>&1; then
+    if docker compose config >/dev/null 2>&1; then
+        test_pass "compose.yaml is valid"
     else
-        test_fail "Service '$svc' missing"
+        test_fail "compose.yaml is invalid"
     fi
-done
 
-# Check volume
-if docker compose config --volumes 2>/dev/null | grep -q "gloria-data"; then
-    test_pass "Volume 'gloria-data' defined"
+    # Check required services
+    for svc in gloria-browser; do
+        if docker compose config --services 2>/dev/null | grep -q "$svc"; then
+            test_pass "Service '$svc' defined"
+        else
+            test_fail "Service '$svc' missing"
+        fi
+    done
+
+    # Check volume
+    if docker compose config --volumes 2>/dev/null | grep -q "gloria-data"; then
+        test_pass "Volume 'gloria-data' defined"
+    else
+        test_fail "Volume 'gloria-data' missing"
+    fi
 else
-    test_fail "Volume 'gloria-data' missing"
+    if [ -f compose.yaml ] && grep -q 'services:' compose.yaml && grep -q 'gloria-browser:' compose.yaml; then
+        test_pass "compose.yaml exists and defines gloria-browser"
+    else
+        test_fail "compose.yaml is missing or invalid"
+    fi
+    test_skip "docker compose config" "(docker CLI not found in current environment)"
 fi
 
 echo ""
@@ -72,7 +81,7 @@ else
     test_fail "browser/Dockerfile missing"
 fi
 
-if grep -q 'chromium-browser' browser/Dockerfile 2>/dev/null; then
+if grep -q 'chrome-linux64\|chromium' browser/Dockerfile 2>/dev/null; then
     test_pass "Chromium installation in Dockerfile"
 else
     test_fail "Chromium installation missing from Dockerfile"
@@ -84,10 +93,16 @@ else
     test_fail "Chrome Bridge installation missing from Dockerfile"
 fi
 
-if grep -q 'xfce4' browser/Dockerfile 2>/dev/null; then
-    test_pass "XFCE installation in Dockerfile"
+if grep -q 'openbox' browser/Dockerfile 2>/dev/null; then
+    test_pass "Openbox WM installation in Dockerfile"
 else
-    test_fail "XFCE installation missing from Dockerfile"
+    test_fail "Openbox WM installation missing from Dockerfile"
+fi
+
+if grep -q 'novnc' browser/Dockerfile 2>/dev/null; then
+    test_pass "noVNC installation in Dockerfile"
+else
+    test_fail "noVNC installation missing from Dockerfile"
 fi
 
 if grep -q 'tigervnc' browser/Dockerfile 2>/dev/null; then
@@ -113,12 +128,16 @@ required_files=(
     "browser/entrypoint.sh"
     "browser/supervisord.conf"
     "browser/scripts/start-vnc.sh"
+    "browser/scripts/start-novnc.sh"
     "browser/scripts/start-chromium.sh"
     "browser/scripts/start-mcp-proxy.sh"
     "browser/scripts/healthcheck.sh"
-    "guacamole/config/guacamole.properties"
-    "guacamole/config/user-mapping.xml"
     "scripts/doctor.sh"
+    "scripts/install.sh"
+    "scripts/reset.sh"
+    "scripts/start.sh"
+    "scripts/stop.sh"
+    "scripts/test.sh"
     ".env.example"
     "README.md"
     "LICENSE"
@@ -199,25 +218,19 @@ fi
 
 echo ""
 
-# ── Guacamole Configuration ─────────────────────────────────────
-echo -e "${BOLD}Guacamole Configuration${NC}"
+# ── noVNC Configuration ─────────────────────────────────────────
+echo -e "${BOLD}noVNC Configuration${NC}"
 
-if grep -q 'gloria-guacd' guacamole/config/guacamole.properties 2>/dev/null; then
-    test_pass "Guacamole connects to guacd"
+if [ -f browser/scripts/start-novnc.sh ]; then
+    test_pass "start-novnc.sh exists"
 else
-    test_fail "Guacamole missing guacd connection"
+    test_fail "start-novnc.sh missing"
 fi
 
-if grep -q 'vnc' guacamole/config/user-mapping.xml 2>/dev/null; then
-    test_pass "Guacamole uses VNC protocol"
+if grep -q 'novnc' browser/supervisord.conf 2>/dev/null; then
+    test_pass "noVNC configured in supervisord.conf"
 else
-    test_fail "Guacamole missing VNC protocol"
-fi
-
-if grep -q 'gloria-browser' guacamole/config/user-mapping.xml 2>/dev/null; then
-    test_pass "Guacamole targets gloria-browser hostname"
-else
-    test_fail "Guacamole missing gloria-browser target"
+    test_fail "noVNC missing from supervisord.conf"
 fi
 
 echo ""
@@ -278,7 +291,7 @@ if docker ps --format '{{.Names}}' 2>/dev/null | grep -q gloria-browser; then
     fi
 
     # Test Chromium process
-    if docker exec gloria-browser pgrep -f chromium-browser >/dev/null 2>&1; then
+    if docker exec gloria-browser pgrep -f 'chromium|chrome' >/dev/null 2>&1; then
         test_pass "Chromium process running"
     else
         test_fail "Chromium not running"
@@ -292,7 +305,7 @@ if docker ps --format '{{.Names}}' 2>/dev/null | grep -q gloria-browser; then
     fi
 
     # Test Chromium uses persistent profile
-    if docker exec gloria-browser bash -c 'pgrep -a chromium-browser | grep -q user-data-dir'; then
+    if docker exec gloria-browser bash -c 'pgrep -a chrome | grep -q user-data-dir || pgrep -a chromium | grep -q user-data-dir'; then
         test_pass "Chromium using persistent profile"
     else
         test_fail "Chromium not using persistent profile"
@@ -302,32 +315,20 @@ else
     test_skip "Runtime tests" "(containers not running)"
 fi
 
-if docker ps --format '{{.Names}}' 2>/dev/null | grep -q gloria-guacd; then
-    test_pass "gloria-guacd container running"
-else
-    test_skip "gloria-guacd" "(not running)"
-fi
-
-if docker ps --format '{{.Names}}' 2>/dev/null | grep -q gloria-guacamole; then
-    test_pass "gloria-guacamole container running"
-else
-    test_skip "gloria-guacamole" "(not running)"
-fi
-
 # MCP port reachability from host
 MCP_PORT="${GLORIA_MCP_PORT:-8787}"
-if curl -sf "http://localhost:${MCP_PORT}/" >/dev/null 2>&1; then
+if curl -sf "http://localhost:${MCP_PORT}/" >/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ":${MCP_PORT}"; then
     test_pass "MCP endpoint reachable from host"
 else
     test_skip "MCP endpoint" "(not reachable from host)"
 fi
 
-# Guacamole reachability from host
-GUAC_PORT="${GLORIA_GUAC_PORT:-8080}"
-if curl -sf "http://localhost:${GUAC_PORT}/guacamole/" >/dev/null 2>&1; then
-    test_pass "Guacamole reachable from host"
+# Web desktop reachability from host
+WEB_PORT="${GLORIA_WEB_PORT:-8080}"
+if curl -sf "http://localhost:${WEB_PORT}/" >/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ":${WEB_PORT}"; then
+    test_pass "Web Desktop reachable from host"
 else
-    test_skip "Guacamole" "(not reachable from host)"
+    test_skip "Web Desktop" "(not reachable from host)"
 fi
 
 echo ""

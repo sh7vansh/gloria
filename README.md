@@ -1,98 +1,119 @@
 # Gloria
 
-**Gloria is a self-hosted Dockerized Chromium workstation that lets humans access a persistent browser through a web desktop while AI agents control the same browser remotely through MCP.**
+Gloria is a containerized, persistent Chromium workstation designed for concurrent human and AI agent operation. Humans access the browser desktop in real time via an HTML5 web interface (noVNC), while AI agents interact with the same browser process, profile, and DOM via the Model Context Protocol (MCP) and Chrome Bridge.
 
 ```
-Human ──── noVNC (Port 8080) ────┐
-                                 ├──▶ Same Chromium ──▶ Same Profile
-AI Agent ── MCP (Port 8787) ─────┘
+┌──────────────┐         noVNC (Port 8080)         ┌───────────────────────────────┐
+│ Human User   ├──────────────────────────────────►│                               │
+└──────────────┘                                   │  Shared Chromium Instance     │
+                                                   │  • Shared DOM & Tab State     │
+┌──────────────┐      MCP Endpoint (Port 8787)     │  • Shared Auth & Cookies      │
+│ AI Agent     ├──────────────────────────────────►│  • Shared /data/profile       │
+└──────────────┘                                   └───────────────────────────────┘
 ```
+
+---
+
+## Overview
+
+Unlike headless browser scrapers or ephemeral automation sandboxes, Gloria runs a full, persistent browser workstation inside a single Docker container:
+
+- **Shared State**: Both humans and AI agents interact with the exact same browser instance, tabs, cookies, and authenticated sessions.
+- **Web Desktop (noVNC)**: Zero-friction HTML5 browser desktop accessible directly from any web browser without local client software.
+- **AI Automation (MCP)**: Native Model Context Protocol (MCP) server powered by [Chrome Bridge](https://github.com/sh7vansh/chrome-bridge), enabling AI agents to read DOM snapshots, click elements, fill forms, execute scripts, and inspect network state.
+- **Lightweight Desktop**: Powered by the Openbox window manager and tint2 panel, optimized for low memory footprint and high responsiveness.
+- **Pre-installed Ad Blocking**: Ships with uBlock Origin Lite configured in Basic mode (declarative filtering) for clean, low-overhead browsing.
+- **Data Persistence**: All profile data, authentication state, extensions, and downloads reside on a persistent Docker volume.
+
+---
 
 ## Architecture
 
-Gloria runs a single, lightweight container:
+Gloria packages the browser, display server, desktop manager, VNC pipeline, and MCP interface into a unified, supervisor-managed container:
 
 ```mermaid
 graph TB
-    subgraph "Host Machine"
+    subgraph "Host / External Clients"
         Human["🧑 Human<br>Web Browser"]
-        AI["🤖 AI Agent<br>MCP Client"]
+        AI["🤖 AI Agent<br>MCP Client (Claude / Cursor / IDE)"]
     end
 
-    subgraph "Gloria Container"
-        WebDesktop["noVNC HTML5 :8080<br>(Zero-Auth Instant Web Access)"]
+    subgraph "Gloria Container (gloria-browser)"
+        Web["noVNC HTML5 :8080<br>(Web Desktop)"]
         VNC["TigerVNC :5901"]
-        Xvfb["Xvfb Display :1"]
-        XFCE["XFCE Desktop"]
-        Chromium["Chromium Browser"]
-        CB["Chrome Bridge"]
-        NM["Native Messaging"]
-        MCP["MCP Proxy :8787"]
-        Profile["📁 /data/chromium/profile"]
+        Xvfb["Xvfb Display :1<br>(GLX / Composite / Damage)"]
+        WM["Openbox WM + tint2 Panel"]
+        Browser["Chromium (Chrome for Testing)<br>+ uBlock Origin Lite"]
+        CB["Chrome Bridge Extension"]
+        NMH["Native Messaging Host"]
+        MCP["MCP Proxy :8787<br>(Streamable HTTP / SSE)"]
+        Storage[("📁 /data<br>Persistent Volume")]
 
-        WebDesktop --> VNC
-        VNC --- Xvfb
-        Xvfb --- XFCE
-        XFCE --- Chromium
-        Chromium --- Profile
+        Web --> VNC
+        VNC --> Xvfb
+        Xvfb --> WM
+        WM --> Browser
+        Browser <--> Storage
 
-        MCP --> CB
-        CB --> NM
-        NM --> Chromium
+        MCP --> NMH
+        NMH <--> CB
+        CB <--> Browser
     end
 
-    Human -->|"http://localhost:8080"| WebDesktop
+    Human -->|"http://localhost:8080"| Web
     AI -->|"http://localhost:8787/mcp"| MCP
 ```
 
-| Component | Role |
-|-----------|------|
-| **Chrome Bridge** | Browser control engine — Python SDK, Native Messaging host, MCP server |
-| **Gloria** | Infrastructure — packages Chromium, Chrome Bridge, XFCE, VNC, noVNC, and MCP Proxy |
+### Component Breakdown
+
+| Component | Technology | Role |
+|---|---|---|
+| **Web Desktop** | noVNC + WebSockets | Exposes the virtual desktop to standard web browsers on port `8080`. |
+| **VNC Server** | TigerVNC (`x0tigervncserver`) | Scrapes the X11 virtual display buffer with low latency. |
+| **Display Server** | Xvfb (`:1`) | Virtual X11 display supporting composite and damage extensions at 60 fps. |
+| **Window Manager** | Openbox + tint2 | Minimalist window management and taskbar for window switching and restore. |
+| **Browser Engine** | Chromium (Chrome for Testing) | Runs persistent browser sessions with enterprise policy support. |
+| **Content Blocker** | uBlock Origin Lite | Manifest V3 declarative ad/tracker blocking enabled in Basic mode. |
+| **Automation Engine** | Chrome Bridge + Native Messaging | High-fidelity DOM introspection and interaction layer. |
+| **Agent API** | MCP Proxy (`mcp-proxy`) | Translates MCP protocol requests to the Chrome Bridge native host. |
+| **Process Manager** | supervisord | Supervises and restarts container services. |
+
+---
 
 ## Quick Start
 
+### Prerequisites
+
+- Docker Engine 24.0+
+- Docker Compose V2
+
+### 1. Clone & Start
+
 ```bash
-git clone https://github.com/sh7vansh/Gloria.git
-cd Gloria
+git clone https://github.com/sh7vansh/gloria.git
+cd gloria
 docker compose up -d
 ```
 
-Gloria bootstraps everything automatically:
-- Ubuntu + XFCE desktop
-- Chromium with persistent profile
-- Chrome Bridge extension + Native Messaging
-- noVNC zero-login HTML5 web desktop
-- MCP Proxy (AI interface)
+### 2. Connect
 
-### Access Points
+| Interface | Endpoint | Authentication | Description |
+|---|---|---|---|
+| **Web Desktop** | `http://localhost:8080` | None (Direct) | Interactive browser desktop for humans. |
+| **MCP API** | `http://localhost:8787/mcp` | None (Local) | HTTP/SSE endpoint for AI agent integration. |
+| **VNC Client** | `localhost:5901` | `gloria` | Optional native VNC viewer connection. |
 
-| Interface | URL | Authentication | Purpose |
-|-----------|-----|----------------|---------|
-| **Web Desktop** | http://localhost:8080 | **None (Zero Login)** | Instant human browser access |
-| **MCP API** | http://localhost:8787/mcp | **None** | AI agent interface |
-| **Direct VNC** | vnc://localhost:5901 | **None** | Native VNC viewer access |
+---
 
-## Human Access
+## Human & AI Workflows
 
-Open **`http://localhost:8080`** in any web browser. You'll immediately see the live Chromium desktop with **zero login screens, usernames, or passwords**.
+### 1. Human Interface (noVNC)
+Navigate to `http://localhost:8080`. The browser window opens automatically within an Openbox environment. You can log into accounts, browse websites, solve CAPTCHAs, or download files. Any changes persist across container restarts.
 
-```
-Your Browser → noVNC (Port 8080) → TigerVNC → XFCE → Chromium
-```
+### 2. AI Interface (MCP Client Configuration)
+Add Gloria to your AI agent or MCP client configuration:
 
-Everything you see is the **real** Chromium instance. Navigate, click, log in — it all persists across container restarts.*real** Chromium instance. Navigate, click, log in — it all persists.
-
-## AI / MCP Access
-
-Connect any MCP-compatible client to:
-
-```
-http://localhost:8787/mcp
-```
-
-### Example MCP client configuration
-
+#### Claude Desktop (`claude_desktop_config.json`) / Cursor / Antigravity
 ```json
 {
   "mcpServers": {
@@ -103,237 +124,153 @@ http://localhost:8787/mcp
 }
 ```
 
-The AI agent gets access to Chrome Bridge tools:
-- `execute_python` — run Python code with the injected `chrome` SDK
-- `chrome.snapshot()` — get a semantic outline of the current page
-- `chrome.click(id)` — click an element by reference ID
-- `chrome.type(id, text)` — type into an input field
-- `chrome.navigate(url)` — navigate to a URL
-- `chrome.screenshot()` — capture a screenshot
-- And more (see [Chrome Bridge docs](https://github.com/sh7vansh/chrome-bridge))
+#### Available MCP Tools
+- `execute_python`: Execute automation scripts using the injected `chrome` SDK.
+- `chrome.snapshot()`: Retrieve an accessible semantic outline and element map of the active tab.
+- `chrome.click(target_id)`: Dispatch mouse clicks to targeted DOM elements.
+- `chrome.type(target_id, text)`: Input text into form controls.
+- `chrome.navigate(url)`: Navigate the active tab to a target URL.
+- `chrome.screenshot()`: Capture viewport screenshots.
 
-## Shared Browser Session
+### 3. Co-Browsing Example
+1. The human user opens a web service in Gloria and completes multi-factor authentication.
+2. The AI agent connects via MCP, calls `chrome.snapshot()` to inspect the authenticated page state.
+3. The AI agent performs automated data entry or workflow tasks using `chrome.click()` and `chrome.type()`.
+4. The human watches the actions live on the noVNC desktop at `http://localhost:8080`.
 
-This is Gloria's core feature. Both interfaces operate on the **exact same Chromium process and profile**:
+---
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   Same Chromium                      │
-│                   Same Profile                       │
-│                   Same Tabs                          │
-│                   Same Cookies                       │
-│                   Same Session                       │
-├──────────────────────────────────────────────────────┤
-│ Human sees ◄──────── screen ────────► AI controls    │
-│ via Guacamole                        via MCP         │
-└──────────────────────────────────────────────────────┘
-```
+## Storage & Persistence
 
-**Example workflow:**
-1. Human opens YouTube in Chromium via Guacamole
-2. AI calls `chrome.snapshot()` → sees YouTube
-3. AI calls `chrome.click(14)` → clicks a video
-4. Human sees the video start playing instantly
-
-## Persistent Storage
-
-Gloria uses a Docker volume (`gloria-data`) mounted at `/data`:
+Gloria stores all state on a named Docker volume (`gloria-data`) mounted at `/data`:
 
 ```
 /data/
 ├── chromium/
-│   └── profile/          # Full Chromium user data directory
-├── downloads/            # Browser downloads
-├── desktop/              # Desktop files
+│   └── profile/          # Full Chromium User Data Directory (cookies, logins, cache)
+├── downloads/            # Linked to /home/gloria/Downloads
+├── desktop/              # Linked to /home/gloria/Desktop
 └── gloria/
-    ├── config/           # Gloria configuration
-    ├── logs/             # Service logs
-    └── state/            # Runtime state
+    ├── config/           # Container configuration files
+    ├── logs/             # Service logs (supervisord, chromium, mcp-proxy, novnc, vnc)
+    └── state/            # Runtime IPC and session state
 ```
 
-**Everything survives container recreation:**
-- Cookies & authentication state
-- Local storage & IndexedDB
-- Browser history & bookmarks
-- Tab sessions (where Chromium supports it)
-- Extensions & settings
-- Downloads
-
+To back up or inspect state:
 ```bash
-# Safe restart — all data preserved
-docker compose down
-docker compose up -d
+# View active service logs inside persistent storage
+docker exec gloria-browser ls -la /data/gloria/logs/
 ```
+
+---
 
 ## Configuration
 
-Copy `.env.example` to `.env` to customize:
+Custom environment variables can be placed in a `.env` file at the repository root:
 
 ```bash
 cp .env.example .env
 ```
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GLORIA_DISPLAY` | `:1` | X11 display number |
-| `GLORIA_SCREEN_WIDTH` | `1920` | Desktop resolution width |
-| `GLORIA_SCREEN_HEIGHT` | `1080` | Desktop resolution height |
-| `GLORIA_SCREEN_DEPTH` | `24` | Color depth |
-| `GLORIA_VNC_PORT` | `5901` | VNC port (internal) |
-| `GLORIA_MCP_PORT` | `8787` | MCP Proxy port (exposed) |
-| `GLORIA_GUAC_PORT` | `8080` | Guacamole web port (exposed) |
-| `GLORIA_DATA` | `/data` | Persistent data mount point |
-| `GLORIA_VNC_PASSWORD` | `gloria` | VNC password |
+| Variable | Default | Purpose |
+|---|---|---|
+| `GLORIA_WEB_PORT` | `8080` | Host port for noVNC Web Desktop |
+| `GLORIA_MCP_PORT` | `8787` | Host port for MCP Proxy endpoint |
+| `GLORIA_VNC_PORT` | `5901` | Host port for direct TigerVNC connections |
+| `GLORIA_DISPLAY` | `:1` | X11 virtual display identifier |
+| `GLORIA_SCREEN_WIDTH` | `1920` | Virtual desktop display width (px) |
+| `GLORIA_SCREEN_HEIGHT` | `1080` | Virtual desktop display height (px) |
+| `GLORIA_SCREEN_DEPTH` | `24` | Virtual desktop color depth (bits) |
+| `GLORIA_DATA` | `/data` | Path to persistent storage inside container |
+| `GLORIA_VNC_PASSWORD` | `gloria` | Password for direct VNC connections |
 
-## Security
+---
 
-> [!CAUTION]
-> **The MCP endpoint is a privileged interface.** Anyone who can reach port 8787 can control a real browser with real authentication state. Treat it like SSH access.
+## Security & Deployment
 
-### Recommendations
+> [!WARNING]
+> The MCP endpoint (`http://localhost:8787/mcp`) is unauthenticated by default and grants full programmatic control over the live Chromium session and its authenticated cookies.
 
-- **Never expose MCP publicly** without authentication
-- Deploy behind a **VPN, SSH tunnel, or authenticated reverse proxy**
-- VNC is not exposed to the host by default — Guacamole is the human-facing layer
-- Change default passwords in production
-- Consider network-level access controls
+### Best Practices
 
-### What is NOT protected in v0.1
+- **Private Networking**: Do not expose ports `8080`, `8787`, or `5901` directly to public networks.
+- **Access Control**: Place Gloria behind an authenticated reverse proxy (e.g., Caddy, Nginx with auth, or Tailscale / WireGuard VPN).
+- **Container Isolation**: Chromium runs with `--no-sandbox` to operate inside standard container namespaces without elevated privileges. Ensure host Docker daemon security policies are enforced.
 
-- MCP has no built-in authentication (rely on network isolation)
-- Guacamole uses simple XML-based credentials
-- The Chromium instance runs with `--no-sandbox` (required inside Docker)
+---
 
-For production deployments, use:
-```
-VPN → Gloria
-```
-or:
-```
-Reverse Proxy (with auth) → Gloria
-```
+## Diagnostics & Management
 
-## Services
+### Diagnostic Script
 
-| Service | Image | Purpose |
-|---------|-------|---------|
-| `gloria-browser` | Custom (Ubuntu 24.04) | XFCE + Chromium + Chrome Bridge + VNC + MCP Proxy |
-| `gloria-guacd` | `guacamole/guacd:1.5.5` | Guacamole connection daemon |
-| `gloria-guacamole` | `guacamole/guacamole:1.5.5` | Guacamole web application |
-
-## Troubleshooting
-
-### Health Check
+Run the built-in diagnostic tool to verify environment readiness:
 
 ```bash
-# From the host machine
+# On the host
 ./scripts/doctor.sh
 
-# From inside the container
+# Inside the container
 docker exec gloria-browser bash /opt/gloria/scripts/healthcheck.sh
 ```
 
-Expected output:
-```
-Gloria
-────────────────────────────────
-  ✓ Desktop        Xvfb running on :1
-  ✓ VNC            listening on port 5901
-  ✓ Chromium       running (PID: 1234)
-  ✓ Profile        /data/chromium/profile
-  ✓ Extension      /home/gloria/.chrome-bridge/extension
-  ✓ Native Host    manifest OK, launcher executable
-  ✓ Chrome Bridge  IPC socket active
-  ✓ MCP Proxy      listening on port 8787
-
-All checks passed.
-```
-
-### Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| Guacamole shows blank screen | Wait 30s for XFCE to fully start, then refresh |
-| MCP connection refused | Check `docker logs gloria-browser` for MCP Proxy errors |
-| Chromium won't start | Check `docker exec gloria-browser cat /data/gloria/logs/chromium.err` |
-| Extension not loaded | Verify with `docker exec gloria-browser ls /home/gloria/.chrome-bridge/extension/` |
-| VNC not connecting | Check VNC logs: `docker exec gloria-browser cat /data/gloria/logs/vnc.err` |
-
-### View Logs
+### Inspecting Logs
 
 ```bash
-# All service logs
+# Docker container output
 docker compose logs -f
 
-# Specific service
-docker logs gloria-browser -f
-
-# Internal service logs
-docker exec gloria-browser cat /data/gloria/logs/chromium.log
-docker exec gloria-browser cat /data/gloria/logs/mcp-proxy.log
-docker exec gloria-browser cat /data/gloria/logs/xfce.log
+# Service-specific log files
+docker exec gloria-browser tail -f /data/gloria/logs/chromium.log
+docker exec gloria-browser tail -f /data/gloria/logs/mcp-proxy.log
+docker exec gloria-browser tail -f /data/gloria/logs/novnc.log
 ```
 
-### Run Tests
+### Restarting or Resetting
 
 ```bash
-./scripts/test.sh
-```
+# Restart services safely (persists data)
+docker compose restart
 
-## Development
-
-### Rebuild after changes
-
-```bash
+# Full rebuild
 docker compose build --no-cache
 docker compose up -d
-```
 
-### Access container shell
-
-```bash
-docker exec -it gloria-browser bash
-```
-
-### Reset everything
-
-```bash
-# Stop and remove volumes (destroys all data!)
+# Complete reset (destroys stored profile data)
 docker compose down -v
-docker compose up -d
 ```
+
+---
 
 ## Architecture Decisions
 
-### Why one container for browser + desktop + VNC?
+### Why a single container?
+Chromium, Xvfb, Openbox, TigerVNC, and noVNC require low-latency shared access to the X11 display socket (`:1`) and Unix domain IPC sockets. Packaging them in a single container managed by `supervisord` eliminates multi-container X11 forwarding overhead and networking complexity.
 
-Chromium must be visible through VNC to the human. This requires Chromium, XFCE, Xvfb, and VNC to share the same X11 display (`:1`). Splitting them across containers would require complex X11 forwarding. A single container with `supervisord` is the pragmatic choice.
+### Why Openbox and tint2?
+Full desktop environments consume significant RAM and CPU cycles in headless containers. Openbox combined with tint2 provides essential window management, minimize/restore capabilities, and taskbar controls with an overhead of under 30MB of RAM.
 
-### Why Guacamole instead of raw VNC?
+### Why noVNC over heavy gateway software?
+noVNC runs directly via WebSockets and HTML5 canvas, providing instant, clientless web desktop access with zero login friction, dynamic scaling, and minimal latency.
 
-VNC requires a VNC client. Guacamole provides browser-based access — any device with a web browser can connect. This matches Gloria's goal of being remotely accessible.
+### Why Chrome Bridge with Native Messaging?
+Chrome Bridge interfaces directly with Chrome's native messaging protocol and Manifest V3 extension APIs. This enables persistent, full-fidelity control of an authentic user browser session rather than an artificial, detectable synthetic browser instance.
 
-### Why `--load-extension` instead of Chrome Web Store?
+---
 
-Chrome Bridge's extension uses `nativeMessaging` permission and connects to a local Native Messaging host. The extension is tightly coupled to the local Chrome Bridge installation. Using `--load-extension` ensures the exact extension version matches the installed Chrome Bridge version.
+## Dependencies & Credits
 
-### Why supervisord?
+- [Chrome Bridge](https://github.com/sh7vansh/chrome-bridge) — Native messaging automation engine & MCP server
+- [uBlock Origin Lite](https://github.com/uBlockOrigin/uBOL-home) — Manifest V3 declarative content blocker
+- [noVNC](https://novnc.com/) — HTML5 VNC client
+- [TigerVNC](https://tigervnc.org/) — High-performance VNC server
+- [Openbox](http://openbox.org/) — Lightweight X11 window manager
+- [tint2](https://gitlab.com/o9000/tint2) — Lightweight X11 taskbar
+- [mcp-proxy](https://pypi.org/project/mcp-proxy/) — SSE / Streamable HTTP MCP proxy
+- [uv](https://docs.astral.sh/uv/) — Fast Python packaging and tool management
 
-The browser container runs multiple long-lived processes (Xvfb, XFCE, VNC, Chromium, MCP Proxy). Supervisord handles process lifecycle, restart policies, and log management. It's lighter than systemd and works well in containers.
-
-### Why not Playwright/Selenium?
-
-Gloria is not a browser automation framework. Chrome Bridge is the control layer, and it uses Chrome's Native Messaging API — a first-party Chrome extension API. This operates against the user's real browser session rather than a separate automation browser.
-
-## Dependencies
-
-- [Chrome Bridge](https://github.com/sh7vansh/chrome-bridge) — Browser control engine
-- [Apache Guacamole](https://guacamole.apache.org/) — Remote desktop gateway
-- [TigerVNC](https://tigervnc.org/) — VNC server
-- [XFCE](https://xfce.org/) — Desktop environment
-- [uv](https://docs.astral.sh/uv/) — Python package manager
-- [mcp-proxy](https://pypi.org/project/mcp-proxy/) — MCP SSE/streamable-HTTP proxy
+---
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
