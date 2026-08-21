@@ -28,8 +28,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     locales \
     dbus \
     dbus-x11 \
-    # Lightweight Window Manager (Openbox)
+    # Lightweight Window Manager & Taskbar
     openbox \
+    tint2 \
     # X11
     xvfb \
     x11-utils \
