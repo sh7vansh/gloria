@@ -5,6 +5,10 @@
 # Docker
 *.log
 tmp/
+compose.override.yaml
+compose.override.yml
+docker-compose.override.yml
+docker-compose.override.yaml
 
 # OS
 .DS_Store
