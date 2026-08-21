@@ -19,3 +19,34 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+================================================================================
+Third-Party Software Notices & Acknowledgements
+================================================================================
+    
+Gloria bundles and configures the following third-party software, each governed
+by its respective open-source license:
+    
+- Chrome Bridge (https://github.com/sh7vansh/chrome-bridge)
+License: MIT License
+    
+- uBlock Origin Lite (https://github.com/uBlockOrigin/uBOL-home)
+      License: GNU General Public License v3.0 (GPLv3)
+    
+- noVNC (https://github.com/novnc/noVNC)
+      License: Mozilla Public License 2.0 (MPL 2.0)
+    
+- TigerVNC (https://github.com/TigerVNC/tigervnc)
+      License: GNU General Public License v2.0 (GPLv2)
+    
+- Openbox (http://openbox.org/)
+      License: GNU General Public License v2.0 (GPLv2)
+    
+- tint2 (https://gitlab.com/o9000/tint2)
+      License: GNU General Public License v2.0 (GPLv2)
+
+- mcp-proxy (https://pypi.org/project/mcp-proxy/)
+      License: MIT License
+
+- Chromium / Chrome for Testing (https://www.chromium.org/)
+      License: BSD 3-Clause and related licenses
