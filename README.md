@@ -40,25 +40,39 @@ docker compose up -d
 
 ## AI Agent Integration
 
-Add Gloria to your client's MCP configuration (e.g. Claude Desktop, Cursor, Antigravity):
+Gloria decouples the AI agent from the browser host. Deploy Gloria on a remote server, VPS, or homelab to give your agents dedicated, 24/7 browser automation without running Chromium on your local machine.
+
+### Connect Your MCP Client
+
+Add Gloria to your client's MCP configuration (Claude Desktop, Cursor, Antigravity, custom agents):
 
 ```json
 {
   "mcpServers": {
     "gloria": {
-      "url": "http://localhost:8787/mcp"
+      "url": "http://<host>:8787/mcp"
     }
   }
 }
 ```
 
+* For local development, use `http://localhost:8787/mcp`.
+* For remote setups, point to `http://<server-ip>:8787/mcp` or your Tailscale / VPN IP.
+
+### Remote Agent Capabilities & Workflows
+
+- **Dedicated Remote Browser**: Offload heavy browsing, scraping, and testing workloads to a persistent remote host.
+- **24/7 Agent Operation**: Agents can execute long-running workflows without tying up local system resources.
+- **Remote Human-in-the-Loop**: If an agent hits a CAPTCHA, 2FA challenge, or login prompt on a remote instance, open `http://<server-ip>:8080` in any browser, resolve it manually, and the agent continues immediately in the same session.
+
 ### Key Tools Provided
-- `chrome.snapshot()` — Extract a semantic outline of the active page.
+- `chrome.snapshot()` — Extract a semantic outline and element map of the active tab.
 - `chrome.click(id)` — Click targeted elements.
 - `chrome.type(id, text)` — Input text into form fields.
-- `chrome.navigate(url)` — Navigate the active tab.
+- `chrome.navigate(url)` — Navigate to URLs.
 - `chrome.screenshot()` — Capture viewport images.
-- `execute_python` — Run custom scripts against the `chrome` Python SDK.
+- `execute_python` — Run custom Python scripts using the `chrome` SDK.
+
 
 ---
 
