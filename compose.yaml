@@ -1,0 +1,73 @@
+name: gloria
+
+services:
+  # ── Main Browser Environment ──────────────────────────────
+  gloria-browser:
+    build:
+      context: ./browser
+      dockerfile: Dockerfile
+    container_name: gloria-browser
+    hostname: gloria-browser
+    environment:
+      - DISPLAY=${GLORIA_DISPLAY:-:1}
+      - GLORIA_SCREEN_WIDTH=${GLORIA_SCREEN_WIDTH:-1920}
+      - GLORIA_SCREEN_HEIGHT=${GLORIA_SCREEN_HEIGHT:-1080}
+      - GLORIA_SCREEN_DEPTH=${GLORIA_SCREEN_DEPTH:-24}
+      - GLORIA_VNC_PORT=${GLORIA_VNC_PORT:-5901}
+      - GLORIA_MCP_PORT=${GLORIA_MCP_PORT:-8787}
+      - GLORIA_DATA=${GLORIA_DATA:-/data}
+      - GLORIA_VNC_PASSWORD=${GLORIA_VNC_PASSWORD:-gloria}
+      - HOME=/home/gloria
+    volumes:
+      - gloria-data:${GLORIA_DATA:-/data}
+    ports:
+      - "${GLORIA_MCP_PORT:-8787}:${GLORIA_MCP_PORT:-8787}"
+    networks:
+      - gloria-net
+    shm_size: '2gb'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "/opt/gloria/scripts/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── Guacamole Daemon ──────────────────────────────────────
+  gloria-guacd:
+    image: guacamole/guacd:1.5.5
+    container_name: gloria-guacd
+    hostname: gloria-guacd
+    networks:
+      - gloria-net
+    restart: unless-stopped
+
+  # ── Guacamole Web Application ─────────────────────────────
+  gloria-guacamole:
+    image: guacamole/guacamole:1.5.5
+    container_name: gloria-guacamole
+    hostname: gloria-guacamole
+    environment:
+      - GUACD_HOSTNAME=gloria-guacd
+      - GUACD_PORT=4822
+      - GUACAMOLE_HOME=/etc/guacamole
+    volumes:
+      - ./guacamole/config/guacamole.properties:/etc/guacamole/guacamole.properties:ro
+      - ./guacamole/config/user-mapping.xml:/etc/guacamole/user-mapping.xml:ro
+    ports:
+      - "${GLORIA_GUAC_PORT:-8080}:8080"
+    networks:
+      - gloria-net
+    depends_on:
+      - gloria-guacd
+      - gloria-browser
+    restart: unless-stopped
+
+volumes:
+  gloria-data:
+    name: gloria-data
+
+networks:
+  gloria-net:
+    name: gloria-net
+    driver: bridge

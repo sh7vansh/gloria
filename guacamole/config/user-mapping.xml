@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<user-mapping>
+    <authorize username="gloria" password="gloria">
+        <connection name="Gloria Desktop">
+            <protocol>vnc</protocol>
+            <param name="hostname">gloria-browser</param>
+            <param name="port">5901</param>
+            <param name="password">gloria</param>
+            <param name="color-depth">24</param>
+            <param name="cursor">local</param>
+            <param name="clipboard-encoding">UTF-8</param>
+            <param name="resize-method">display-update</param>
+            <param name="autoretry">3</param>
+        </connection>
+    </authorize>
+</user-mapping>
