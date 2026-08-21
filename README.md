@@ -3,14 +3,14 @@
 **Gloria is a self-hosted Dockerized Chromium workstation that lets humans access a persistent browser through a web desktop while AI agents control the same browser remotely through MCP.**
 
 ```
-Human ──── Guacamole ──── VNC ──┐
-                                ├──▶ Same Chromium ──▶ Same Profile
-AI Agent ── MCP ── Chrome Bridge┘
+Human ──── noVNC (Port 8080) ────┐
+                                 ├──▶ Same Chromium ──▶ Same Profile
+AI Agent ── MCP (Port 8787) ─────┘
 ```
 
 ## Architecture
 
-Gloria packages five components into a reproducible Docker Compose environment:
+Gloria runs a single, lightweight container:
 
 ```mermaid
 graph TB
@@ -19,40 +19,36 @@ graph TB
         AI["🤖 AI Agent<br>MCP Client"]
     end
 
-    subgraph "Docker Network"
-        subgraph "gloria-browser"
-            XFCE["XFCE Desktop"]
-            Xvfb["Xvfb Display :1"]
-            VNC["TigerVNC"]
-            Chromium["Chromium Browser"]
-            CB["Chrome Bridge"]
-            NM["Native Messaging"]
-            MCP["MCP Proxy :8787"]
-            Profile["📁 /data/chromium/profile"]
-        end
+    subgraph "Gloria Container"
+        WebDesktop["noVNC HTML5 :8080<br>(Zero-Auth Instant Web Access)"]
+        VNC["TigerVNC :5901"]
+        Xvfb["Xvfb Display :1"]
+        XFCE["XFCE Desktop"]
+        Chromium["Chromium Browser"]
+        CB["Chrome Bridge"]
+        NM["Native Messaging"]
+        MCP["MCP Proxy :8787"]
+        Profile["📁 /data/chromium/profile"]
 
-        guacd["gloria-guacd"]
-        guacamole["gloria-guacamole :8080"]
+        WebDesktop --> VNC
+        VNC --- Xvfb
+        Xvfb --- XFCE
+        XFCE --- Chromium
+        Chromium --- Profile
+
+        MCP --> CB
+        CB --> NM
+        NM --> Chromium
     end
 
-    Human -->|"http://localhost:8080"| guacamole
-    guacamole --> guacd
-    guacd -->|VNC| VNC
-    VNC --- Xvfb
-    Xvfb --- XFCE
-    XFCE --- Chromium
-    Chromium --- Profile
-
+    Human -->|"http://localhost:8080"| WebDesktop
     AI -->|"http://localhost:8787/mcp"| MCP
-    MCP --> CB
-    CB --> NM
-    NM --> Chromium
 ```
 
 | Component | Role |
 |-----------|------|
 | **Chrome Bridge** | Browser control engine — Python SDK, Native Messaging host, MCP server |
-| **Gloria** | Infrastructure — packages Chromium, Chrome Bridge, XFCE, VNC, Guacamole, MCP Proxy into a deployable environment |
+| **Gloria** | Infrastructure — packages Chromium, Chrome Bridge, XFCE, VNC, noVNC, and MCP Proxy |
 
 ## Quick Start
 
@@ -62,32 +58,30 @@ cd Gloria
 docker compose up -d
 ```
 
-That's it. Gloria bootstraps everything automatically:
+Gloria bootstraps everything automatically:
 - Ubuntu + XFCE desktop
 - Chromium with persistent profile
 - Chrome Bridge extension + Native Messaging
-- VNC server
-- Apache Guacamole (remote desktop)
+- noVNC zero-login HTML5 web desktop
 - MCP Proxy (AI interface)
 
 ### Access Points
 
-| Interface | URL | Purpose |
-|-----------|-----|---------|
-| **Desktop** | http://localhost:8080/guacamole/ | Human remote desktop access |
-| **MCP** | http://localhost:8787/mcp | AI agent interface |
-
-**Guacamole login:** `gloria` / `gloria`
+| Interface | URL | Authentication | Purpose |
+|-----------|-----|----------------|---------|
+| **Web Desktop** | http://localhost:8080 | **None (Zero Login)** | Instant human browser access |
+| **MCP API** | http://localhost:8787/mcp | **None** | AI agent interface |
+| **Direct VNC** | vnc://localhost:5901 | **None** | Native VNC viewer access |
 
 ## Human Access
 
-Open http://localhost:8080/guacamole/ in any web browser. Log in with `gloria` / `gloria`. You'll see a full Ubuntu XFCE desktop with Chromium running.
+Open **`http://localhost:8080`** in any web browser. You'll immediately see the live Chromium desktop with **zero login screens, usernames, or passwords**.
 
 ```
-Your Browser → Guacamole → guacd → VNC → XFCE → Chromium
+Your Browser → noVNC (Port 8080) → TigerVNC → XFCE → Chromium
 ```
 
-Everything you see is the **real** Chromium instance. Navigate, click, log in — it all persists.
+Everything you see is the **real** Chromium instance. Navigate, click, log in — it all persists across container restarts.*real** Chromium instance. Navigate, click, log in — it all persists.
 
 ## AI / MCP Access
 

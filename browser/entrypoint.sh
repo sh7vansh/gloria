@@ -178,12 +178,25 @@ MANIFEST
     echo "  ✓ Native Messaging manifest created"
 fi
 
-# Also ensure manifest for google-chrome path (some Chromium builds check here)
+# Also ensure manifest for custom user-data-dir and google-chrome-for-testing
+mkdir -p "${DATA_DIR}/chromium/profile/NativeMessagingHosts"
+cp "${NMH_MANIFEST}" "${DATA_DIR}/chromium/profile/NativeMessagingHosts/com.chrome_bridge.native.json" 2>/dev/null || true
+chown -R gloria:gloria "${DATA_DIR}/chromium/profile/NativeMessagingHosts" 2>/dev/null || true
+
+mkdir -p "${HOME_DIR}/.config/google-chrome-for-testing/NativeMessagingHosts"
+cp "${NMH_MANIFEST}" "${HOME_DIR}/.config/google-chrome-for-testing/NativeMessagingHosts/com.chrome_bridge.native.json" 2>/dev/null || true
+chown -R gloria:gloria "${HOME_DIR}/.config/google-chrome-for-testing" 2>/dev/null || true
+
 mkdir -p "${HOME_DIR}/.config/google-chrome/NativeMessagingHosts"
 cp "${NMH_MANIFEST}" "${HOME_DIR}/.config/google-chrome/NativeMessagingHosts/com.chrome_bridge.native.json" 2>/dev/null || true
 chown -R gloria:gloria "${HOME_DIR}/.config/google-chrome" 2>/dev/null || true
 
-echo "  ✓ Native Messaging verified"
+mkdir -p /etc/chromium/native-messaging-hosts /etc/opt/chrome/native-messaging-hosts
+cp "${NMH_MANIFEST}" /etc/chromium/native-messaging-hosts/com.chrome_bridge.native.json 2>/dev/null || true
+cp "${NMH_MANIFEST}" /etc/opt/chrome/native-messaging-hosts/com.chrome_bridge.native.json 2>/dev/null || true
+chmod 644 /etc/chromium/native-messaging-hosts/*.json /etc/opt/chrome/native-messaging-hosts/*.json 2>/dev/null || true
+
+echo "  ✓ Native Messaging verified across all profile & browser directories"
 
 # ── Phase 8: Start supervisor ───────────────────────────────────────────────
 echo "[8/8] Starting services..."

@@ -37,9 +37,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     x11-utils \
     x11-xserver-utils \
     xdg-utils \
-    # VNC
-    tigervnc-standalone-server \
+    # VNC & HTML5 noVNC (Zero-password web desktop)
     tigervnc-common \
+    tigervnc-tools \
+    tigervnc-scraping-server \
+    novnc \
+    websockify \
     # Fonts
     fonts-liberation \
     fonts-dejavu-core \
@@ -61,15 +64,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xdotool \
     xclip \
     && locale-gen en_US.UTF-8 \
+    && ln -sf /usr/share/novnc/vnc.html /usr/share/novnc/index.html \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Install Chromium ────────────────────────────────────────────────────────
+# Verify VNC tools exist
+RUN command -v vncpasswd && \
+    command -v x0tigervncserver
+    
+# ── Install Chromium (Chrome for Testing build with --load-extension support) ──
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium-browser \
-    chromium-codecs-ffmpeg \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+        unzip \
+        libnss3 \
+        libasound2t64 \
+        libgbm1 \
+        libxss1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && wget -q -O /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testing-public/152.0.7977.54/linux64/chrome-linux64.zip \
+    && unzip -q /tmp/chrome.zip -d /opt/ \
+    && rm -f /tmp/chrome.zip \
+    && ln -s /opt/chrome-linux64/chrome /usr/bin/chromium \
+    && ln -s /opt/chrome-linux64/chrome /usr/bin/chromium-browser \
+    && chmod +x /opt/chrome-linux64/chrome
 
 # ── Create gloria user ──────────────────────────────────────────────────────
 RUN useradd -m -s /bin/bash -G sudo gloria \
@@ -113,6 +129,6 @@ ENV GLORIA_VNC_PORT=5901
 ENV GLORIA_MCP_PORT=8787
 ENV GLORIA_VNC_PASSWORD=gloria
 
-EXPOSE 5901 8787
+EXPOSE 8080 5901 8787
 
 ENTRYPOINT ["/opt/gloria/entrypoint.sh"]

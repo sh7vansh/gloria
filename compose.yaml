@@ -21,7 +21,9 @@ services:
     volumes:
       - gloria-data:${GLORIA_DATA:-/data}
     ports:
-      - "${GLORIA_MCP_PORT:-8787}:${GLORIA_MCP_PORT:-8787}"
+      - "${GLORIA_WEB_PORT:-8080}:8080"
+      - "${GLORIA_MCP_PORT:-8787}:8787"
+      - "${GLORIA_VNC_PORT:-5901}:5901"
     networks:
       - gloria-net
     shm_size: '2gb'
@@ -32,36 +34,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-
-  # ── Guacamole Daemon ──────────────────────────────────────
-  gloria-guacd:
-    image: guacamole/guacd:1.5.5
-    container_name: gloria-guacd
-    hostname: gloria-guacd
-    networks:
-      - gloria-net
-    restart: unless-stopped
-
-  # ── Guacamole Web Application ─────────────────────────────
-  gloria-guacamole:
-    image: guacamole/guacamole:1.5.5
-    container_name: gloria-guacamole
-    hostname: gloria-guacamole
-    environment:
-      - GUACD_HOSTNAME=gloria-guacd
-      - GUACD_PORT=4822
-      - GUACAMOLE_HOME=/etc/guacamole
-    volumes:
-      - ./guacamole/config/guacamole.properties:/etc/guacamole/guacamole.properties:ro
-      - ./guacamole/config/user-mapping.xml:/etc/guacamole/user-mapping.xml:ro
-    ports:
-      - "${GLORIA_GUAC_PORT:-8080}:8080"
-    networks:
-      - gloria-net
-    depends_on:
-      - gloria-guacd
-      - gloria-browser
-    restart: unless-stopped
 
 volumes:
   gloria-data:

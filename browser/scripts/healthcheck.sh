@@ -20,8 +20,12 @@ else
 fi
 
 # Check Chromium process
-if pgrep -x chromium-browse >/dev/null 2>&1 || pgrep -f chromium-browser >/dev/null 2>&1; then
-    : # OK
+if pgrep -x chromium >/dev/null 2>&1 || \
+   pgrep -x chromium-browser >/dev/null 2>&1 || \
+   pgrep -f 'chromium' >/dev/null 2>&1 || \
+   pgrep -x google-chrome >/dev/null 2>&1 || \
+   pgrep -f '/usr/bin/google-chrome' >/dev/null 2>&1; then
+    :
 else
     echo "FAIL: Chromium not running"
     failed=1
@@ -32,6 +36,14 @@ if ss -tlnp | grep -q ":${GLORIA_MCP_PORT:-8787}"; then
     : # OK
 else
     echo "FAIL: MCP Proxy not listening"
+    failed=1
+fi
+
+# Check noVNC Web Desktop port
+if ss -tlnp | grep -q ":${GLORIA_WEB_PORT:-8080}"; then
+    : # OK
+else
+    echo "FAIL: noVNC Web Desktop not listening"
     failed=1
 fi
 
