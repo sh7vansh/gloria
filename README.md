@@ -1,6 +1,7 @@
 # Gloria
 
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](compose.yaml)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-sh7vansh%2Fgloria-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/sh7vansh/gloria)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A containerized, persistent Chromium workstation for concurrent human and AI agent use. Humans interact with the live desktop via an in-browser HTML5 interface (noVNC), while AI agents control the same session, profile, and DOM via the Model Context Protocol (MCP).
