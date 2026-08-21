@@ -1,5 +1,8 @@
 # Gloria
 
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](compose.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A containerized, persistent Chromium workstation for concurrent human and AI agent use. Humans interact with the live desktop via an in-browser HTML5 interface (noVNC), while AI agents control the same session, profile, and DOM via the Model Context Protocol (MCP).
 
 ```
@@ -97,13 +100,15 @@ Gloria is built on top of excellent open-source software:
 - [Chrome Bridge](https://github.com/sh7vansh/chrome-bridge) — Native browser automation engine & MCP server
 - [uBlock Origin Lite](https://github.com/uBlockOrigin/uBOL-home) (GPLv3) — MV3 declarative ad blocker
 - [noVNC](https://novnc.com/) (MPL 2.0) & [TigerVNC](https://tigervnc.org/) (GPLv2) — HTML5 VNC client and display server
-- [Openbox](http://openbox.org/) (GPLv2) & [tint2](https://gitlab.com/o9000/tint2) (GPLv2) —
-  Lightweight X11 window manager and panel
+- [Openbox](http://openbox.org/) (GPLv2) & [tint2](https://gitlab.com/o9000/tint2) (GPLv2) — Lightweight X11 window manager and panel
 - [mcp-proxy](https://pypi.org/project/mcp-proxy/) (MIT) — Streamable HTTP/SSE MCP proxy
+
+---
 
 ## License
 
-[MIT] (LICENSE)
+[MIT](LICENSE)
+
 
 
 
