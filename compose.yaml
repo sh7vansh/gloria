@@ -3,6 +3,7 @@ name: gloria
 services:
   # ── Main Browser Environment ──────────────────────────────
   gloria-browser:
+    image: sh7vansh/gloria:latest
     build:
       context: ./browser
       dockerfile: Dockerfile
