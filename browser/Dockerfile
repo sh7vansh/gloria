@@ -92,9 +92,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -s /opt/chrome-linux64/chrome /usr/bin/chromium-browser \
     && chmod +x /opt/chrome-linux64/chrome
 
+# ── Install uBlock Origin Lite (Preinstalled MV3 Ad-Blocker) ────────────────
+RUN mkdir -p /opt/extensions/ublock-origin-lite \
+    && wget -q -O /tmp/ubolite.zip https://github.com/uBlockOrigin/uBOL-home/releases/download/2026.820.1159/uBOLite_2026.820.1159.chromium.zip \
+    && unzip -q /tmp/ubolite.zip -d /opt/extensions/ublock-origin-lite/ \
+    && rm -f /tmp/ubolite.zip \
+    && python3 -c "import json; p='/opt/extensions/ublock-origin-lite/manifest.json'; d=json.load(open(p)); d['key']='MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqJE6DLdtfHXfeaGDSKdUuCvvb3pYEpH7jsuYMdExgIqmKRux2dknlJAnYkamBMcirGBfwCFjqE++TAkCs8AcrYLOGRRMt8oa7DXuFWzgtQpkwigI1+dnIuYLzERLQx/O02/p//fHdDQfxWKvySnN+VHdINOHsUD6OcoC5I7CXIBSrateRpRGpFxxR6F4nWvK3aq2j3L6A/qRg+pr0QVqL8p1TOJG+vSh234YHnsO9Dsys+VNbT0k0n8enCm/VsOCMjihgHpmftd1bSfSr8s1IwBuFdaLVQKghyDn1PvhFNBkuAXu+J/z0/o5Nio+/bIz406ECI9Qtkr9kqVboFDtzwIDAQAB'; json.dump(d, open(p, 'w'), indent=2)" \
+    && chmod -R 755 /opt/extensions/ublock-origin-lite
+
 # ── Create gloria user ──────────────────────────────────────────────────────
 RUN useradd -m -s /bin/bash -G sudo gloria \
-    && echo "gloria ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/gloria
+    && echo "gloria ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/gloria \
+    && chown -R gloria:gloria /opt/extensions
 
 # ── Install uv ──────────────────────────────────────────────────────────────
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \

@@ -105,19 +105,22 @@ mkdir -p /etc/chromium/policies/managed
 
 # Read the extension ID from the manifest's key field
 # The Chrome Bridge extension has a hardcoded key that produces this ID:
-EXT_ID="nbghhppoiigjbdjbhefiaijofpnhgepb"
+UBLOCK_EXT_ID="ddkjiahejlhfcafbddmgiahcphecmpfh"
 
-# For developer/unpacked extensions, we use ExtensionSettings with
-# installation_mode: force_installed + a local update URL workaround,
-# OR the simpler approach: use --load-extension flag in the Chromium launch command.
-# We use BOTH approaches for maximum reliability.
+# Ensure extension directories are owned by gloria
+if [ -d /opt/extensions ]; then
+    chown -R gloria:gloria /opt/extensions
+fi
 
 # Approach 1: Chromium policies (for managed installs)
 cat > /etc/chromium-browser/policies/managed/gloria-extensions.json << POLICY
 {
-    "ExtensionInstallAllowlist": ["${EXT_ID}"],
+    "ExtensionInstallAllowlist": ["${EXT_ID}", "${UBLOCK_EXT_ID}"],
     "ExtensionSettings": {
         "${EXT_ID}": {
+            "installation_mode": "allowed"
+        },
+        "${UBLOCK_EXT_ID}": {
             "installation_mode": "allowed"
         }
     },
@@ -126,11 +129,14 @@ cat > /etc/chromium-browser/policies/managed/gloria-extensions.json << POLICY
 }
 POLICY
 
-# Copy to alternative policy path
+# Copy to alternative policy paths
 cp /etc/chromium-browser/policies/managed/gloria-extensions.json \
    /etc/chromium/policies/managed/gloria-extensions.json 2>/dev/null || true
+mkdir -p /etc/opt/chrome/policies/managed
+cp /etc/chromium-browser/policies/managed/gloria-extensions.json \
+   /etc/opt/chrome/policies/managed/gloria-extensions.json 2>/dev/null || true
 
-echo "  ✓ Chromium extension policy configured"
+echo "  ✓ Chromium extension policy configured (Chrome Bridge + uBlock Origin Lite)"
 
 # ── Phase 7: Configure Native Messaging for Chromium ───────────────────────
 echo "[7/8] Verifying Native Messaging configuration..."

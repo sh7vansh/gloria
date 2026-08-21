@@ -19,11 +19,18 @@ sleep 5
 mkdir -p "${PROFILE_DIR}" "${DOWNLOAD_DIR}"
 
 EXTENSION_DIR="${HOME}/.chrome-bridge/extension"
+UBLOCK_DIR="/opt/extensions/ublock-origin-lite"
+
+LOAD_EXTENSIONS="${EXTENSION_DIR}"
+if [ -d "${UBLOCK_DIR}" ] && [ -f "${UBLOCK_DIR}/manifest.json" ]; then
+    LOAD_EXTENSIONS="${LOAD_EXTENSIONS},${UBLOCK_DIR}"
+    echo "[Chromium] Including uBlock Origin Lite from ${UBLOCK_DIR}"
+fi
 
 CHROMIUM_FLAGS=(
     --user-data-dir="${PROFILE_DIR}"
-    --load-extension="${EXTENSION_DIR}"
-    --disable-extensions-except="${EXTENSION_DIR}"
+    --load-extension="${LOAD_EXTENSIONS}"
+    --disable-extensions-except="${LOAD_EXTENSIONS}"
     --no-first-run
     --no-default-browser-check
     --disable-background-mode
@@ -40,7 +47,7 @@ CHROMIUM_FLAGS=(
     --enable-features=WebRTCPipeWireCapturer
 )
 
-echo "[Chromium] Starting with persistent profile at ${PROFILE_DIR} and extension at ${EXTENSION_DIR}"
+echo "[Chromium] Starting with persistent profile at ${PROFILE_DIR} and extensions at ${LOAD_EXTENSIONS}"
 
 BROWSER_BIN="chromium"
 if ! command -v "$BROWSER_BIN" >/dev/null 2>&1; then
