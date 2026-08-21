@@ -28,10 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     locales \
     dbus \
     dbus-x11 \
-    # XFCE Desktop
-    xfce4 \
-    xfce4-terminal \
-    xfce4-taskmanager \
+    # Lightweight Window Manager (Openbox)
+    openbox \
     # X11
     xvfb \
     x11-utils \
@@ -79,6 +77,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libasound2t64 \
         libgbm1 \
         libxss1 \
+        libatk1.0-0t64 \
+        libatk-bridge2.0-0t64 \
+        libatspi2.0-0t64 \
+        libgtk-3-0t64 \
+        libcups2t64 \
+        libdrm2 \
     && rm -rf /var/lib/apt/lists/* \
     && wget -q -O /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testing-public/152.0.7977.54/linux64/chrome-linux64.zip \
     && unzip -q /tmp/chrome.zip -d /opt/ \
