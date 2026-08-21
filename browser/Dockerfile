@@ -71,7 +71,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN command -v vncpasswd && \
     command -v x0tigervncserver
     
-# ── Install Chromium (Chrome for Testing build with --load-extension support) ──
+# ── Install Google Chrome / Chromium (Multi-Arch: amd64 and arm64) ───────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
         libnss3 \
@@ -84,13 +84,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libgtk-3-0t64 \
         libcups2t64 \
         libdrm2 \
-    && rm -rf /var/lib/apt/lists/* \
-    && wget -q -O /tmp/chrome.zip https://storage.googleapis.com/chrome-for-testing-public/152.0.7977.54/linux64/chrome-linux64.zip \
-    && unzip -q /tmp/chrome.zip -d /opt/ \
-    && rm -f /tmp/chrome.zip \
-    && ln -s /opt/chrome-linux64/chrome /usr/bin/chromium \
-    && ln -s /opt/chrome-linux64/chrome /usr/bin/chromium-browser \
-    && chmod +x /opt/chrome-linux64/chrome
+    && ARCH=$(dpkg --print-architecture) \
+    && wget -q -O /tmp/google-chrome.deb "https://dl.google.com/linux/direct/google-chrome-stable_current_${ARCH}.deb" \
+    && apt-get install -y /tmp/google-chrome.deb \
+    && rm -f /tmp/google-chrome.deb \
+    && ln -sfn /usr/bin/google-chrome-stable /usr/bin/chromium \
+    && ln -sfn /usr/bin/google-chrome-stable /usr/bin/chromium-browser \
+    && rm -rf /var/lib/apt/lists/*
 
 # ── Install uBlock Origin Lite (Preinstalled MV3 Ad-Blocker) ────────────────
 RUN mkdir -p /opt/extensions/ublock-origin-lite \
