@@ -35,11 +35,8 @@ CHROMIUM_FLAGS=(
     --start-maximized
     --download-default-directory="${DOWNLOAD_DIR}"
     --remote-debugging-port=9222
-    --renderer-process-limit=2
-    --disable-dev-shm-usage
     --disable-gpu-rasterization
     --disable-smooth-scrolling
-    --js-flags="--max-old-space-size=256"
     --enable-features=WebRTCPipeWireCapturer
 )
 
