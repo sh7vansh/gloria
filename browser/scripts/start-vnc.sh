@@ -29,4 +29,6 @@ exec x0tigervncserver \
     -AcceptKeyEvents=true \
     -AcceptPointerEvents=true \
     -AcceptSetDesktopSize=true \
-    -MaxProcessorUsage=90
+    -PollingCycle=10 \
+    -MaxProcessorUsage=95 \
+    -UseSHM=1
