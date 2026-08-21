@@ -25,10 +25,22 @@ AI     ───▶  MCP   (Port 8787)  ───┘
 
 ## Quick Start
 
+### Option 1: Docker Compose (Recommended)
 ```bash
 git clone https://github.com/sh7vansh/gloria.git
 cd gloria
 docker compose up -d
+```
+
+### Option 2: Docker Run (Prebuilt Multi-Arch Image)
+```bash
+docker run -d \
+  --name gloria-browser \
+  -p 8080:8080 -p 8787:8787 -p 5901:5901 \
+  -v gloria-data:/data \
+  --shm-size=2gb \
+  --restart unless-stopped \
+  sh7vansh/gloria:latest
 ```
 
 ### Endpoints
@@ -38,6 +50,9 @@ docker compose up -d
 | **Web Desktop** | `http://localhost:8080` | None | Live browser GUI for human access |
 | **MCP Endpoint** | `http://localhost:8787/mcp` | None | AI agent interface (HTTP/SSE) |
 | **Direct VNC** | `localhost:5901` | `gloria` | Native VNC viewer access |
+
+> [!TIP]
+> **Reverse Proxy / Nginx Proxy Manager**: When proxying `:8080`, enable **Websockets Support** and add `proxy_buffering off;` under Advanced settings for low-latency streaming.
 
 ## Remote AI Automation (MCP)
 
