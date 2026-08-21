@@ -63,7 +63,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xdotool \
     xclip \
     && locale-gen en_US.UTF-8 \
-    && echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=vnc.html?autoconnect=true&resize=scale&quality=8&compression=2"></head><body></body></html>' > /usr/share/novnc/index.html \
+    && echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=vnc.html?autoconnect=true&resize=scale&quality=6&compression=6"></head><body></body></html>' > /usr/share/novnc/index.html \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

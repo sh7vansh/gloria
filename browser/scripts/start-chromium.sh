@@ -35,15 +35,13 @@ CHROMIUM_FLAGS=(
     --no-default-browser-check
     --disable-background-mode
     --disable-gpu-sandbox
-    --disable-software-rasterizer
     --disable-dev-shm-usage
     --no-sandbox
     --disable-setuid-sandbox
     --start-maximized
     --download-default-directory="${DOWNLOAD_DIR}"
     --remote-debugging-port=9222
-    --disable-gpu-rasterization
-    --disable-smooth-scrolling
+    --enable-zero-copy
     --enable-features=WebRTCPipeWireCapturer
 )
 
