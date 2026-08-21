@@ -129,14 +129,17 @@ cat > /etc/chromium-browser/policies/managed/gloria-extensions.json << POLICY
 }
 POLICY
 
-# Copy to alternative policy paths
-cp /etc/chromium-browser/policies/managed/gloria-extensions.json \
-   /etc/chromium/policies/managed/gloria-extensions.json 2>/dev/null || true
-mkdir -p /etc/opt/chrome/policies/managed
-cp /etc/chromium-browser/policies/managed/gloria-extensions.json \
-   /etc/opt/chrome/policies/managed/gloria-extensions.json 2>/dev/null || true
+# uBlock Origin Lite Managed Storage Policy (enforce Basic mode)
+cat > /etc/chromium-browser/policies/managed/${UBLOCK_EXT_ID}.json << POLICY
+{
+    "defaultFiltering": "basic",
+    "disableFirstRunPage": true
+}
+POLICY
+cp /etc/chromium-browser/policies/managed/${UBLOCK_EXT_ID}.json /etc/chromium/policies/managed/ 2>/dev/null || true
+cp /etc/chromium-browser/policies/managed/${UBLOCK_EXT_ID}.json /etc/opt/chrome/policies/managed/ 2>/dev/null || true
 
-echo "  ✓ Chromium extension policy configured (Chrome Bridge + uBlock Origin Lite)"
+echo "  ✓ Chromium extension policy configured (Chrome Bridge + uBlock Origin Lite [Basic Mode])"
 
 # ── Phase 7: Configure Native Messaging for Chromium ───────────────────────
 echo "[7/8] Verifying Native Messaging configuration..."
